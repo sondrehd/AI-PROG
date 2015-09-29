@@ -1,6 +1,6 @@
 __author__ = 'paulpm, sondredyvik'
-import variable as cspvariable
-import constraint as  cspconstraint
+from variable import Variable
+from constraint import Constraint
 import state
 
 
@@ -8,7 +8,6 @@ class CSP:
 
     def __init__(self):
         self.variables = []
-        self.domains = {}
         self.constraints = {}
         self.queue = []
 
@@ -20,28 +19,26 @@ class CSP:
             args = args + ',' + n
         return eval('(lambda ' + args[1:] + ': ' + expression + ')', environment)
 
-    def revise(self, searchstate, statevariable, focal_constraint):
+    def revise(self, focal_variable, constraint):
         revised = False
-        failing_color = ''
-        for focal_color in searchstate.domains[statevariable]:
+        for focal_color in focal_variable.domain:
             satisfies_constraint = False
-            for other_color in searchstate.domains[focal_constraint.vertices[1]]:
-                if focal_constraint.check_if_satisfies(focal_color, other_color):
+            for other_color in constraint.vertices[1].domain:
+                if constraint.check_if_satisfies(focal_color, other_color):
                     satisfies_constraint = True
                     break
-                failing_color = other_color
+
             if satisfies_constraint is False:
-                searchstate.domains[statevariable].remove(focal_color)
+                focal_variable.domain.pop(focal_color)
                 revised = True
-                print statevariable, focal_color+"-"+failing_color
 
         return revised
 
     def domain_filter(self):
         while len(self.queue) > 0:
-            focal_state, focal_variable, focal_constraint = self.queue.pop()
-            if self.revise(focal_state, focal_variable, focal_constraint):
-                self.add_all_tuples_in_which_variable_occurs(focal_state, focal_variable, focal_constraint)
+            focal_variable, other_variable = self.queue.pop()
+            if self.revise(focal_variable, other_variable):
+                self.add_all_tuples_in_which_variable_occurs(focal_variable, other_variable)
 
 
     def add_all_tuples_in_which_variable_occurs(self, focal_state, focal_variable, focal_constraint):
@@ -61,10 +58,10 @@ class CSP:
         self.add_all_tuples_in_which_variable_occurs(state, var, None)
         self.domain_filter()
 
-    def initialize_queue(self, searchstate):
+    def initialize_queue(self):
         for variable in self.variables:
             for focal_constraint in self.constraints[variable]:
-                self.queue.append((searchstate, variable, focal_constraint))
+                self.queue.append((variable, focal_constraint))
 
 
 
@@ -79,7 +76,7 @@ def create_csp(graph_file, domain_size):
 
     for i in range(number_of_vertices):
         index, x, y = [i for i in f.readline().strip().split(' ')]
-        vertex = cspvariable.Variable(int(index), float(x), float(y))
+        vertex = Variable(int(index), float(x), float(y))
         csp.variables.append(vertex)
         csp.constraints[vertex] = []
 
@@ -87,11 +84,11 @@ def create_csp(graph_file, domain_size):
         i1, i2 = [int(i) for i in f.readline().strip().split(' ')]
         this_vertex = csp.variables[i1]
         other_vertex = csp.variables[i2]
-        csp.constraints[this_vertex].append(cspconstraint.Constraint([this_vertex, other_vertex]))
-        csp.constraints[other_vertex].append(cspconstraint.Constraint([other_vertex, this_vertex]))
+        csp.constraints[this_vertex].append(Constraint([this_vertex, other_vertex]))
+        csp.constraints[other_vertex].append(Constraint([other_vertex, this_vertex]))
 
     for k in csp.variables:
-        csp.domains[k] = [colors[x] for x in range(domain_size)]
+        k.domain = [colors[x] for x in range(domain_size)]
 
     f.close()
     return csp
@@ -99,14 +96,11 @@ def create_csp(graph_file, domain_size):
 
 def main():
     csp = create_csp("graph-color-1.txt", len(colors))
-    searchstate = generate_initial_searchstate(csp)
-    searchstate.domains[csp.variables[0]]= ['pink']
-    csp.initialize_queue(searchstate)
-    csp.domain_filter()
-    for key in searchstate.domains.keys():
-        print len(searchstate.domains[key])
 
-    csp.rerun(searchstate, csp.variables[0])
+    csp.initialize_queue()
+    csp.domain_filter()
+
+    #csp.rerun(searchstate, csp.variables[0])
 
 
 def generate_initial_searchstate(csp):

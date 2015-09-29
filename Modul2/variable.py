@@ -7,6 +7,7 @@ class Variable:
         self.index = index
         self.x = x
         self.y = y
+        self.domain = []
 
     def __repr__(self):
         return 'n' + str(self.index)
