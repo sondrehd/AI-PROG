@@ -2,6 +2,7 @@ __author__ = 'paulpm, sondredyvik'
 from variable import Variable
 from constraint import Constraint
 import state
+from collections import deque
 
 
 class CSP:
@@ -9,7 +10,7 @@ class CSP:
     def __init__(self):
         self.variables = []
         self.constraints = {}
-        self.queue = []
+        self.queue = deque()
 
     ##Not used yet
 
@@ -21,37 +22,38 @@ class CSP:
 
     def revise(self, focal_variable, constraint):
         revised = False
-        for focal_color in focal_variable.domain:
+        for focal_domain in focal_variable.domain:
             satisfies_constraint = False
-            for other_color in constraint.vertices[1].domain:
-                if constraint.check_if_satisfies(focal_color, other_color):
+            for other_domain in constraint.get_other(focal_variable).domain:
+                if constraint.is_satisfied(focal_domain, other_domain):
                     satisfies_constraint = True
                     break
 
             if satisfies_constraint is False:
-                focal_variable.domain.pop(focal_color)
+                focal_variable.domain.remove(focal_domain)
                 revised = True
 
         return revised
 
     def domain_filter(self):
         while len(self.queue) > 0:
-            focal_variable, other_variable = self.queue.pop()
-            if self.revise(focal_variable, other_variable):
-                self.add_all_tuples_in_which_variable_occurs(focal_variable, other_variable)
+            focal_variable, constraint = self.queue.popleft()
+            if self.revise(focal_variable, constraint):
+                self.push_todo_revise(focal_variable, constraint)
 
 
-    def add_all_tuples_in_which_variable_occurs(self, focal_state, focal_variable, focal_constraint):
+    def push_todo_revise(self, focal_variable, focal_constraint):
         constraints_containing_variable = []
         for key, list_of_values in self.constraints.iteritems():
-                    for constraint_in_list_of_values in list_of_values:
-                        if focal_constraint is None:
-                            if constraint_in_list_of_values.contains_variable(focal_variable):
-                                constraints_containing_variable.append(constraint_in_list_of_values)
-                        elif constraint_in_list_of_values.contains_variable(focal_variable) and not constraint_in_list_of_values == focal_constraint:
-                            constraints_containing_variable.append(constraint_in_list_of_values)
-                    for focal_constraint in constraints_containing_variable:
-                        self.queue.append((focal_state, focal_constraint.get_other(focal_variable), focal_constraint))
+            print key, list_of_values
+            for constraint_in_list_of_values in list_of_values:
+                if focal_constraint is None:
+                    if constraint_in_list_of_values.contains_variable(focal_variable):
+                        constraints_containing_variable.append(constraint_in_list_of_values)
+                elif constraint_in_list_of_values.contains_variable(focal_variable) and not constraint_in_list_of_values == focal_constraint:
+                    constraints_containing_variable.append(constraint_in_list_of_values)
+            for focal_constraint in constraints_containing_variable:
+                self.queue.append((focal_constraint.get_other(focal_variable), focal_constraint))
 
 
     def rerun(self, state, var):
@@ -60,8 +62,8 @@ class CSP:
 
     def initialize_queue(self):
         for variable in self.variables:
-            for focal_constraint in self.constraints[variable]:
-                self.queue.append((variable, focal_constraint))
+            for constraint in self.constraints[variable]:
+                self.queue.append((variable, constraint))
 
 
 

@@ -11,7 +11,7 @@ class Constraint:
     def __eq__(self, other):
         return self.vertices[0] == other.vertices[0] and self.vertices[1] == other.vertices[1]
 
-    def check_if_satisfies(self, focal, other):
+    def is_satisfied(self, focal, other):
         return not focal == other
 
     def contains_variable(self, variable):
