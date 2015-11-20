@@ -15,7 +15,7 @@ def activation_map(x):
     return {
         0: T.tanh,
         1: T.nnet.sigmoid,
-        2: T.nnet.relu,
+        2: lambda k: T.switch(k > 0, k, 0),  # Equivalent to T.nnet.relu (rectified linear unit)
         3: T.nnet.softmax,
     }.get(x, T.tanh)  # T.tanh is default if x is not found
 
@@ -24,18 +24,16 @@ def train_model(epochs, minibatch_size):
     for epoch in range(epochs):
         print("Training epoch number {}...".format(epoch))
         error = 0
-        i = 0
         j = minibatch_size
-        while j < len(train_set_x):
-            image_bulk = train_set_x[i:j]
-            # Creating a result bulk with only zeros
-            result_bulk = np.zeros((minibatch_size, 10), dtype=np.int)
+
+        for i in range(0, len(train_set_x), minibatch_size):
+            image_batch = train_set_x[i:j]
+            label_batch = np.zeros((minibatch_size, 10), dtype=np.int)
             for k in range(minibatch_size):
-                label_index = train_set_y[i + k]
-                result_bulk[k][label_index] = 1
-            i += minibatch_size
+                label_batch[k][train_set_y[i + k]] = 1
             j += minibatch_size
-            error += ann.train(image_bulk, result_bulk)
+            error += ann.train(image_batch, label_batch)
+
         print("Average error per image in epoch {}: {:.3%}".format(epoch, error / j))
 
 
