@@ -1,7 +1,7 @@
-from Tkinter import *
+from tkinter import *
 
-from board import Board
-from ExpectimaxChooser import ExpectimaxChooser
+from Modul6.board import Board
+from Modul6.ExpectimaxChooser import ExpectimaxChooser
 GRID_LEN              = 4
 GRID_PADDING          = 10
 SIZE                  = 500
@@ -50,17 +50,17 @@ class GameWindow(Frame):
 
     #end
     def onKeyPress(self,direction):
-        print self.board.state, "here "
+        print( self.board.state, "here ")
         if self.board.move(direction, self.board.state):
-            print self.board.state, "but then"
+            print (self.board.state, "but then")
             self.update_view(self.board.state.board)
             self.board.place_tile(self.board.state)
             self.update_view(self.board.state.board)
-            print self.expectimax.recommend_move(self.board.state)
+
 
 
     def do_one_move(self):
-        move = self.expectimax.recommend_move(self.board.state, 4, False)
+        move = self.expectimax.recommend_move(self.board.state, 3)
         if self.board.move(move,self.board.state):
 
             self.board.place_tile(self.board.state)
@@ -68,7 +68,7 @@ class GameWindow(Frame):
             self.after(10, lambda  : self.do_one_move())
         else:
 
-            print "FAIL"
+            print ("FAIL")
 
 
 
@@ -124,7 +124,8 @@ root.bind('<Left>', lambda x : game.onKeyPress("left") )
 root.bind('<Up>', lambda x : game.onKeyPress("up") )
 root.bind('<Right>', lambda x : game.onKeyPress("right"))
 root.bind('<Down>', lambda x : game.onKeyPress("down"))
-game.do_one_move()
+root.bind('<a>', lambda x : game.do_one_move())
+
 
 root.mainloop()
 
